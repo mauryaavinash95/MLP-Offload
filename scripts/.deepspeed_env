@@ -1,0 +1,9 @@
+PATH=/home/amaurya/softwares/zstd-install/bin:/soft/buildtools/cmake/3.26.5/bin:/soft/compilers/gcc/11.1.0/x86_64-suse-linux/bin:/soft/compilers/cuda/cuda-12.3.0/bin:/home/amaurya/softwares/miniconda3/envs/dspd_env/bin:/home/amaurya/softwares/miniconda3/condabin:/home/amaurya/.local/bin:/usr/local/bin:/usr/bin:/bin:/home/amaurya/softwares/vmtouch:/home/amaurya/softwares/miniconda3/bin:/home/amaurya/softwares/boost/boost_1_72_0:/home/amaurya/softwares/stress-ng/usr/bin
+LD_LIBRARY_PATH=/home/amaurya/softwares/zstd-install/lib:/soft/compilers/gcc/11.1.0/x86_64-suse-linux/lib64:/soft/compilers/cuda/cuda-12.3.0/lib64:/home/amaurya/softwares/boost/boost_1_72_0/stage/lib
+http_proxy=http://proxy.ftm.alcf.anl.gov:3128
+https_proxy=http://proxy.ftm.alcf.anl.gov:3128
+CC=gcc
+CXX=g++
+IBV_FORK_SAFE=1
+CFLAGS=-I/home/amaurya/softwares/miniconda3/envs/dspd_env/include/
+LDFLAGS=-L/home/amaurya/softwares/miniconda3/envs/dspd_env/lib/
