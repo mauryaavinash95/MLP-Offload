@@ -32,5 +32,25 @@ Once the pacakges are installed, change the `NVME_PATH` and `PFS_PATH` in [scrip
 Finally, running `bash scripts/launch-expt.sh` should start running a 40B model using the vanilla DeepSpeed ZeRO-3 offloading engine and then using MLP-Offloading. The logs become available in the `logs` directory.
 
 #### Parsing Results
+After the logs are created in the `logs` directory, revlevant performance profiles can be extracted through the paring script [scripts/parse-res.py](scripts/parse-res.py). Since the generated log filenames contain the root path of the file system(s) used as suffix arguments, we need to set the `LOCAL_NVME_ROOT` and `PFS_ROOT` variables to the root names of the filesystems. We supply sample logs from one of our testbed containing the profiles of 40B-120B model, representative of Figure 7, showing the average iteration time breakdown on scaling model sizes in the paper. These values deafult to `tmp` for our testbed's local NVMe; and to `vast` for our vast filesystem PFS cluster. The logs can be parsed as follows:
+```python
+> python scripts/parse-res.py
+```
+Which outputs the following:
+
+| Model(B) | Approach          | Elapsed(ms) | FWD(ms) | BWD(ms) | UPDATE(ms) | SPEEDUP |
+|----------|-------------------|-------------|---------|---------|------------|---------|
+| 40       | DeepSpeed ZeRO-3  | 242280.6    | 653.89  | 27473.02| 213610.43  | 1.00    |
+| 40       | MLP-Offload       | 101717.3    | 639.52  | 2043.55 | 98507.29   | 2.38    |
+| 52       | DeepSpeed ZeRO-3  | 238597.6    | 512.46  | 28293.34| 209336.10  | 1.00    |
+| 52       | MLP-Offload       | 92173.0     | 514.48  | 1833.24 | 89407.41   | 2.59    |
+| 70       | DeepSpeed ZeRO-3  | 370562.1    | 765.63  | 32905.03| 336426.77  | 1.00    |
+| 70       | MLP-Offload       | 151337.8    | 770.55  | 2946.07 | 147183.76  | 2.45    |
+| 100      | DeepSpeed ZeRO-3  | 572027.2    | 1202.37 | 68341.33| 501915.92  | 1.00    |
+| 100      | MLP-Offload       | 275528.8    | 1205.63 | 4563.45 | 269246.05  | 2.08    |
+| 120      | DeepSpeed ZeRO-3  | 550360.6    | 1165.51 | 73194.69| 475480.44  | 1.00    |
+| 120      | MLP-Offload       | 288178.5    | 1160.60 | 4201.09 | 282331.47  | 1.91    |
+
+
 
 

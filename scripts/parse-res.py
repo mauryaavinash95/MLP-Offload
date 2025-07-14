@@ -3,13 +3,14 @@ import re
 import copy
 import os
 
+#### Initialization of constants and configurations ####
+LOCAL_NVME_ROOT = "tmp"
+PFS_ROOT = "vast"
+GPU_PER_NODE = 4
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 parent_dir = os.path.dirname(script_dir)
 logs_dir = os.path.join(parent_dir, "logs")
-
-#### Initialization of constants and configurations ####
-GPU_PER_NODE = 4
 # Models are defined with their configuration parameters
 MODELS = {
     40: { "m": 40, "F": 10480, "N":128, "L": 40, "U": 2048, "H": 5120, "T": 752563836},
@@ -20,7 +21,7 @@ MODELS = {
 }
 
 # We have several approaches to perform ablation studies. However, the core compared
-# approaches are the baseline (DEFAULT_DEEPSPEED) and our approach (FULLY_OPTIMIZED).
+# approaches are the baseline (DEFAULT_DEEPSPEED) and MLP-Offload (FULLY_OPTIMIZED).
 DEFAULT_DEEPSPEED = "DeepSpeed ZeRO-3"
 ENABLE_CACHING = "Enable Caching"
 SKIP_GRADS = "Skip Gradients"
@@ -30,7 +31,7 @@ MULTI_PATH = "Multi-Path (with caching)"
 MULTI_PATH_SKIP_GRADS = "MP Skip Grads"
 MULTI_PATH_SINGLE_PROC = "MP Proc. Atomic R/W"
 MULTI_PATH_COMPRESSED = "MP Compressed"
-FULLY_OPTIMIZED = "Our Approach"
+FULLY_OPTIMIZED = "MLP-Offload"
 
 approach_code = {
     0: DEFAULT_DEEPSPEED,
@@ -47,7 +48,7 @@ approach_code = {
 rev_approach_code = {v: k for k, v in approach_code.items()}
 base_config = {"basepath":"./", "approach": DEFAULT_DEEPSPEED, "dp": 4, "tp": 1, "ga": 1, "tf_ratio":1, 
                 "act_ckpt":True, "mbs": 1, "gbs": 4, "subg": int(100000000), "opt_ratio": 0,
-                "skip_grads": 0, "pipelinerw": 1, "single_proc": 0, "cache": 0, "fs": "tmp", "compress": 0}
+                "skip_grads": 0, "pipelinerw": 1, "single_proc": 0, "cache": 0, "fs": LOCAL_NVME_ROOT, "compress": 0}
 
 # Define the columns of interest for extracting from the log files.
 df_columns = [
@@ -162,11 +163,12 @@ for model in [40, 52, 70, 100, 120]:
             config['cache'] = 0
             config['skip_grads'] = 0
             config['opt_ratio'] = 0
+            config['fs'] = LOCAL_NVME_ROOT
         elif k == rev_approach_code[FULLY_OPTIMIZED]:
             config['cache'] = 1
             config['skip_grads'] = 1
             config['opt_ratio'] = 3
-            config['fs'] = "tmp-vast"
+            config['fs'] = f"{LOCAL_NVME_ROOT}-{PFS_ROOT}"
             config['compress'] = 0
             config['single_proc'] = 1
         else:
@@ -201,14 +203,14 @@ print_summary_table(res)
 # Model(B)   Approach              Elapsed(ms)    FWD(ms)    BWD(ms) UPDATE(ms)  SPEEDUP
 # ----------------------------------------------------------------------------------------------------
 # 40         DeepSpeed ZeRO-3         242280.6     653.89   27473.02  213610.43     1.00
-# 40         Our Approach             101717.3     639.52    2043.55   98507.29     2.38
+# 40         MLP-Offload              101717.3     639.52    2043.55   98507.29     2.38
 # 52         DeepSpeed ZeRO-3         238597.6     512.46   28293.34  209336.10     1.00
-# 52         Our Approach              92173.0     514.48    1833.24   89407.41     2.59
+# 52         MLP-Offload               92173.0     514.48    1833.24   89407.41     2.59
 # 70         DeepSpeed ZeRO-3         370562.1     765.63   32905.03  336426.77     1.00
-# 70         Our Approach             151337.8     770.55    2946.07  147183.76     2.45
+# 70         MLP-Offload              151337.8     770.55    2946.07  147183.76     2.45
 # 100        DeepSpeed ZeRO-3         572027.2    1202.37   68341.33  501915.92     1.00
-# 100        Our Approach             275528.8    1205.63    4563.45  269246.05     2.08
+# 100        MLP-Offload              275528.8    1205.63    4563.45  269246.05     2.08
 # 120        DeepSpeed ZeRO-3         550360.6    1165.51   73194.69  475480.44     1.00
-# 120        Our Approach             288178.5    1160.60    4201.09  282331.47     1.91
+# 120        MLP-Offload              288178.5    1160.60    4201.09  282331.47     1.91
 # ----------------------------------------------------------------------------------------------------
 ##### SAMPLE SUMMARY TABLE OUTPUT #####
