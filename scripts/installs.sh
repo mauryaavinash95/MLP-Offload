@@ -1,76 +1,99 @@
 #!/bin/bash
 
 set -x
+set -o errexit
 set -o pipefail
 # Installation instructions for MLP-Offload (SC'25)
-PWD=$(pwd)
+
+SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
 
 install_cuda() {
-    cd $PWD
+    cd $PROJECT_ROOT_DIR
 	echo "Installing CUDA... Needs sudo access..."
 	wget https://developer.download.nvidia.com/compute/cuda/12.3.0/local_installers/cuda_12.3.0_545.23.06_linux.run
 	sudo sh cuda_12.3.0_545.23.06_linux.run
 }
 
 install_conda() {
-    cd $PWD
+    cd $PROJECT_ROOT_DIR
 	echo "Installing Conda"
 	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 	bash Miniconda3-latest-Linux-x86_64.sh
 	echo "Please restart shell, or run 'source ~/.bashrc' or 'source ~/.bash_profile' "
 }
 
+init_conda() {
+	__conda_setup="$(${CONDA_EXE:-"$HOME/miniconda3/bin/conda"} shell.bash hook)"
+    eval "$__conda_setup"
+    source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
+    conda activate dspeed_env
+export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+	export CFLAGS="-I$CONDA_PREFIX/include/"
+       	export LDFLAGS="-L$CONDA_PREFIX/lib/"
+}
+
 build_env() {
-    cd $PWD
-	conda create -n dspeed_env python=3.12
+    cd $PROJECT_ROOT_DIR
+	conda create -n dspeed_env python=3.12 -y
 	conda activate dspeed_env
-	echo "Installing Pytorch"
-	pip install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url https://download.pytorch.org/whl/rocm6.2
-	pip install regex six sentencepiece pybind11 einops
+	echo "Installing PyTorch"
+	pip install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url https://download.pytorch.org/whl/cu121
+	pip install nltk numpy regex six transformers sentencepiece pybind11 einops packaging ninja
 	conda install anaconda::libaio
 }
 
 install_apex() {
-    cd $PWD
+    cd $PROJECT_ROOT_DIR
+    init_conda
+    conda activate dspeed_env
+    echo "PATH after activation: $PATH"
+    python -c "import torch" || { echo "PyTorch is not available!"; return 1; }
+
+    echo $PATH
 	COMMIT_ID=c02c6c891eedfabf91f0de8127d7636d4292356d
 	echo "Installing NVIDIA Apex... This takes ~10 minutes..."
 	git clone https://github.com/NVIDIA/apex
 	cd apex/
+	sed -i 's/^[[:space:]]*check_cuda_torch_binary_vs_bare_metal(CUDA_HOME)/#&/' setup.py
 	# git checkout 6309120bf4158e5528 # This commit didn't give NCCL faults.
 	git checkout $COMMIT_ID
 	pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 }
 
 install_megatron_ds() {
-    cd $PWD
+    cd $PROJECT_ROOT_DIR
 	echo "Using git submodule of Megatron-DeepSpeed"
 	git submodule update --init --recursive
 	cd Megatron-DeepSpeed
 }
 
 load_dataset() {
-    cd $PWD
+    cd $PROJECT_ROOT_DIR
     echo "Downloading dataset..."
-    mkdir -p $PWD/dataset
+    mkdir -p $PROJECT_ROOT_DIR/dataset
     cd dataset/
-    if [ -d "$PWD/dataset/oscar-1GB.jsonl" ]; then
+    if [ -d "$PROJECT_ROOT_DIR/dataset/oscar-1GB.jsonl" ]; then
         echo "Dataset already exists, skipping download."
         return
     fi
-
     wget https://huggingface.co/bigscience/misc-test-data/resolve/main/stas/oscar-1GB.jsonl.xz # training dataset
     wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-vocab.json #Vocabulary
     wget https://s3.amazonaws.com/models.huggingface.co/bert/gpt2-merges.txt # Merge File
-    
+
     xz -d oscar-1GB.jsonl.xz     # extract the dataset.
-    cd $PWD/Megatron-DeepSpeed
+    cd $PROJECT_ROOT_DIR/Megatron-DeepSpeed
+    init_conda
+    conda activate dspeed_env
     python tools/preprocess_data.py \
-        --input $PWD/dataset/oscar-1GB.jsonl \
-        --output-prefix $PWD/dataset/my-gpt2 \
-        --vocab-file $PWD/dataset/gpt2-vocab.json \
+        --input $PROJECT_ROOT_DIR/dataset/oscar-1GB.jsonl \
+        --output-prefix $PROJECT_ROOT_DIR/dataset/my-gpt2 \
+        --vocab-file $PROJECT_ROOT_DIR/dataset/gpt2-vocab.json \
         --dataset-impl mmap \
         --tokenizer-type GPT2BPETokenizer \
-        --merge-file $PWD/dataset/gpt2-merges.txt \
+        --merge-file $PROJECT_ROOT_DIR/dataset/gpt2-merges.txt \
         --append-eod \
         --workers 8
 }
@@ -78,20 +101,22 @@ load_dataset() {
 install_ds() {
 	echo "Using git submodule of DeepSpeed..."
 	git submodule update --init --recursive
-	cd DeepSpeed
-	DS_BUILD_AIO=1 DS_BUILD_CCL_COMM=1 DS_BUILD_CPU_ADAM=1 DS_BUILD_CPU_LION=0 DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_FUSED_ADAM=1 DS_BUILD_FUSED_LION=0 DS_BUILD_CPU_ADAGRAD=1 DS_BUILD_FUSED_LAMB=1 DS_BUILD_QUANTIZER=0 DS_BUILD_RANDOM_LTD=0 DS_BUILD_SPARSE_ATTN=0 DS_BUILD_TRANSFORMER=1 DS_BUILD_TRANSFORMER_INFERENCE=0 DS_BUILD_STOCHASTIC_TRANSFORMER=0 pip install .
+	cd $PROJECT_ROOT_DIR/DeepSpeed
+	init_conda
+	echo "CFLAGS is $CFLAGS"
+	DS_BUILD_AIO=1 DS_BUILD_CCL_COMM=1 DS_BUILD_CPU_ADAM=1 DS_SKIP_CUDA_CHECK=1 DS_BUILD_CPU_LION=0 DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_FUSED_ADAM=1 DS_BUILD_FUSED_LION=0 DS_BUILD_CPU_ADAGRAD=1 DS_BUILD_FUSED_LAMB=1 DS_BUILD_QUANTIZER=0 DS_BUILD_RANDOM_LTD=0 DS_BUILD_SPARSE_ATTN=0 DS_BUILD_TRANSFORMER=1 DS_BUILD_TRANSFORMER_INFERENCE=0 DS_BUILD_STOCHASTIC_TRANSFORMER=0 pip install .
 	echo "Checking if DeepSpeed installed successfully"
 	ds_report
 }
 
 install_cuda
 install_conda
+init_conda
 build_env
 install_apex
 install_megatron_ds
-load_dataset
 install_ds
-
+load_dataset
 
 # For the system config available on Cloudlab
 # https://www.wisc.cloudlab.us/portal/show-node.php?node_id=d8545-10s10505
