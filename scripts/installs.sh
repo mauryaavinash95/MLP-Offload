@@ -42,7 +42,7 @@ build_env() {
 	conda activate dspeed_env
 	echo "Installing PyTorch"
 	pip install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url https://download.pytorch.org/whl/cu121
-	pip install nltk 'numpy<2' regex six transformers sentencepiece pybind11 einops packaging ninja
+	pip install nltk 'numpy<2' regex six transformers sentencepiece pybind11 einops packaging ninja pandas scikit-learn matplotlib tqdm
 	conda install anaconda::libaio
 }
 
