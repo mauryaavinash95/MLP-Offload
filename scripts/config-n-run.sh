@@ -25,6 +25,9 @@ SKIP_GRADS=0
 SINGLE_PROC=0
 BUFFER_COUNT=16
 OUTPUT_POSTFIX=""
+SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
+DIR=$PROJECT_ROOT_DIR/scripts/
 
 while getopts ":m:H:F:N:L:U:S:K:T:M:B:R:G:D:P:O:h:C:E:g:s:b:z:" opt; do
   case $opt in
@@ -239,17 +242,15 @@ print_vals() {
 }
 print_vals
 
-DIR=$(pwd)
-cd ${DIR}
 
-BASE_DATA_PATH=$DIR/dataset
+BASE_DATA_PATH=$PROJECT_ROOT_DIR/dataset
 DATASET="${BASE_DATA_PATH}/my-gpt2_text_document"
 VOCAB_PATH=${BASE_DATA_PATH}/gpt2-vocab.json
 MERGE_PATH=${BASE_DATA_PATH}/gpt2-merges.txt
 USE_DEEPSPEED=1
 ZERO_STAGE=3
 
-output_dir="${DIR}/logs/"
+output_dir="${PROJECT_ROOT_DIR}/logs/"
 
 mkdir -p "$output_dir"
 CONFIG_JSON="$output_dir/ds_config.json"
@@ -326,6 +327,7 @@ options=" \
        --deepspeed-activation-checkpointing"
 
 
+
 log_str="${model_size_B}B-tp$TP-dp$DP-l$NUM_LAYERS-h$HIDDEN_SIZE-a$NUM_HEADS-sl$SEQ_LENGTH-gbs$GLOBAL_BATCH-mbs$MICRO_BATCH-ratio$RATIO-subg$SUB_GROUP_SIZE-pipelinerw$PIPELINE_RW-opt_ratio$OPT_RATIO-cache$ENABLE_CACHING-skip_grads$SKIP_GRADS-single_proc$SINGLE_PROC-compress0"
 # Add the pathnames of OPTIMIZER offloaded paths/
 IFS=';' # Set the input field separator to ';'
@@ -380,7 +382,7 @@ cat <<EOT > $CONFIG_JSON
 }
 EOT
 
-MEGATRON_DIR="$DIR/..//Megatron-DeepSpeed"
+MEGATRON_DIR="$PROJECT_ROOT_DIR/Megatron-DeepSpeed"
 run_cmd="deepspeed ${MEGATRON_DIR}/pretrain_gpt.py ${options} | tee $output_dir/log-$log_str.log 2>&1"
 echo $run_cmd
 eval ${run_cmd}

@@ -6,7 +6,9 @@ conda init
 conda activate dspeed_env
 NVME_PATH="/local/scratch"
 PFS_PATH="/vast/users/amaurya/scratch"
-DIR=$(pwd)
+SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
+DIR=$PROJECT_ROOT_DIR/scripts/
 
 # This function sets the model size and other parameters based on the model size passed as an argument.
 # m = Model size in billions
