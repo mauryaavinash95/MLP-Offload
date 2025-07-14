@@ -27,9 +27,9 @@ install_conda() {
 
 init_conda() {
 	__conda_setup="$(${CONDA_EXE:-"$HOME/miniconda3/bin/conda"} shell.bash hook)"
-    	eval "$__conda_setup"
-    	source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
-    	conda activate dspeed_env
+	eval "$__conda_setup"
+	source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
+	conda activate dspeed_env
 	export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
 	export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 	export CFLAGS="-I$CONDA_PREFIX/include/"
