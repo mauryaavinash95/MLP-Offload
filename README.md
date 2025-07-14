@@ -12,24 +12,25 @@ The software artifacts in this repository are primarily decomposed into three mo
 3. **scripts**: This folder contains the scripts required to setup and install required packages, launch experiments using different approaches, and parsers to obtain required performance metrics.
 4. **logs**: This folder contains a subset of logs of different approaches presented as sample.
 
-### Hardware Requirements
+### Testbed Setup
+
+#### Hardware Requirements
 1. Nvidia GPU enabled node(s) with A100 or newer architectures
 2. Node-local NVMe(s)
 3. Remote storage, preferably a parallel file system
 
-### Software Requisites
+#### Software Requirements and Installation
+1. Basic pre-requisites include: [Python (>=3.10)](https://www.python.org/downloads/release/python-3100/); [CUDA toolkit version 12.3](https://developer.nvidia.com/cuda-12-3-0-download-archive); [GCC version 11.1+](https://gcc.gnu.org/install/)
+2. All other software packages can be installed using [`scripts/installs.sh`](scripts/installs.sh).
 
-1. Basic pacakges
 
-    a. [Python (>=3.10)](https://www.python.org/downloads/release/python-3100/)
+### Evaluations
 
-    b. [CUDA toolkit version 12.1](https://developer.nvidia.com/cuda-12-1-0-download-archive)
+#### Running Experiments
+Once the pacakges are installed, change the `NVME_PATH` and `PFS_PATH` in [scripts/launch-expt.sh](scripts/launch-expt.sh) to point to node-local disk and remote storage locations of the testbed.
 
-    c. [GCC version 11.1](https://gcc.gnu.org/install/)
+Finally, running `bash scripts/launch-expt.sh` should start running a 40B model using the vanilla DeepSpeed ZeRO-3 offloading engine and then using MLP-Offloading. The logs become available in the `logs` directory.
 
-2. Create a virtual environment (`dspeed_env`), using [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [pip](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/).
-
-3. Install PyTorch version 2.5 with CUDA 12.1 support [link for previous versions](https://pytorch.org/get-started/previous-versions/) or using `pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121`
-
+#### Parsing Results
 
 

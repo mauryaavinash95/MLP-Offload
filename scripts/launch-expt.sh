@@ -5,7 +5,7 @@ echo "Starting MLP-Offload experiments:"
 conda init
 conda activate dspeed_env
 NVME_PATH="/temp-nvme-dir" 	# "/local/scratch"
-PFS_PATH="/mydata/local" 	# "/vast/users/amaurya/scratch"
+PFS_PATH="/mydata/local" 	# "/vast/users/$USER/scratch"
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
 DIR=$PROJECT_ROOT_DIR/scripts/

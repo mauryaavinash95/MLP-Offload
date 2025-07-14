@@ -32,9 +32,8 @@ init_conda() {
     	conda activate dspeed_env
 	export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
 	export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-
 	export CFLAGS="-I$CONDA_PREFIX/include/"
-       	export LDFLAGS="-L$CONDA_PREFIX/lib/"
+    export LDFLAGS="-L$CONDA_PREFIX/lib/"
 }
 
 build_env() {
@@ -59,7 +58,7 @@ install_apex() {
 	echo "Installing NVIDIA Apex... This takes ~10 minutes..."
 	git clone https://github.com/NVIDIA/apex
 	cd apex/
-	sed -i 's/^[[:space:]]*check_cuda_torch_binary_vs_bare_metal(CUDA_HOME)/#&/' setup.py
+	sed -i 's/^[[:space:]]*check_cuda_torch_binary_vs_bare_metal(CUDA_HOME)/#&/' setup.py # this command is required to avoid CUDA vs PyTorch version mismatch errors.
 	# git checkout 6309120bf4158e5528 # This commit didn't give NCCL faults.
 	git checkout $COMMIT_ID
 	pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
@@ -69,7 +68,8 @@ install_megatron_ds() {
     cd $PROJECT_ROOT_DIR
 	echo "Using git submodule of Megatron-DeepSpeed"
 	git submodule update --init --recursive
-	cd Megatron-DeepSpeed
+	cd $PROJECT_ROOT_DIR/Megatron-DeepSpeed
+	git checkout dist_nvme_opt
 }
 
 load_dataset() {
@@ -104,6 +104,7 @@ install_ds() {
 	echo "Using git submodule of DeepSpeed..."
 	git submodule update --init --recursive
 	cd $PROJECT_ROOT_DIR/DeepSpeed
+	git checkout dist_nvme_opt
 	init_conda
 	echo "CFLAGS is $CFLAGS"
 	DS_BUILD_AIO=1 DS_BUILD_CCL_COMM=1 DS_BUILD_CPU_ADAM=1 DS_SKIP_CUDA_CHECK=1 DS_BUILD_CPU_LION=0 DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_FUSED_ADAM=1 DS_BUILD_FUSED_LION=0 DS_BUILD_CPU_ADAGRAD=1 DS_BUILD_FUSED_LAMB=1 DS_BUILD_QUANTIZER=0 DS_BUILD_RANDOM_LTD=0 DS_BUILD_SPARSE_ATTN=0 DS_BUILD_TRANSFORMER=1 DS_BUILD_TRANSFORMER_INFERENCE=0 DS_BUILD_STOCHASTIC_TRANSFORMER=0 pip install .
@@ -120,25 +121,15 @@ install_megatron_ds
 install_ds
 load_dataset
 
-# For the system config available on Cloudlab
+# Experiments conducted on
+# 1. JLSE Testbed: https://www.jlse.anl.gov/nvidia-h100
+# 2. ALCF Polaris: https://docs.alcf.anl.gov/polaris/getting-started/
+
+# Additionally, the scripts in this artifact have been tested on CloudLab system:
 # https://www.wisc.cloudlab.us/portal/show-node.php?node_id=d8545-10s10505
 
-# > cat /etc/os-release
-# PRETTY_NAME="Ubuntu 24.04.2 LTS"
-# NAME="Ubuntu"
-# VERSION_ID="24.04"
-# VERSION="24.04.2 LTS (Noble Numbat)"
-# VERSION_CODENAME=noble
-# ID=ubuntu
-# ID_LIKE=debian
-# HOME_URL="https://www.ubuntu.com/"
-# SUPPORT_URL="https://help.ubuntu.com/"
-# BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-# PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-# UBUNTU_CODENAME=noble
-# LOGO=ubuntu-logo
-
-# uname -r
+# Ubuntu 24.04.2 LTS
+# > uname -r
 # 6.8.0-59-generic
 
 set +x
