@@ -243,6 +243,19 @@ print_vals() {
 print_vals
 
 
+
+init_conda() {
+	__conda_setup="$(${CONDA_EXE:-"$HOME/miniconda3/bin/conda"} shell.bash hook)"
+    eval "$__conda_setup"
+    source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
+    conda activate dspeed_env
+	export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
+	export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+	export CFLAGS="-I$CONDA_PREFIX/include/"
+       	export LDFLAGS="-L$CONDA_PREFIX/lib/"
+}
+init_conda
+
 BASE_DATA_PATH=$PROJECT_ROOT_DIR/dataset
 DATASET="${BASE_DATA_PATH}/my-gpt2_text_document"
 VOCAB_PATH=${BASE_DATA_PATH}/gpt2-vocab.json
@@ -383,6 +396,6 @@ cat <<EOT > $CONFIG_JSON
 EOT
 
 MEGATRON_DIR="$PROJECT_ROOT_DIR/Megatron-DeepSpeed"
-run_cmd="deepspeed ${MEGATRON_DIR}/pretrain_gpt.py ${options} | tee $output_dir/log-$log_str.log 2>&1"
+run_cmd="deepspeed ${MEGATRON_DIR}/pretrain_gpt.py ${options} | tee -a $output_dir/log-$log_str.log"
 echo $run_cmd
 eval ${run_cmd}

@@ -13,6 +13,8 @@ install_cuda() {
 	echo "Installing CUDA... Needs sudo access..."
 	wget https://developer.download.nvidia.com/compute/cuda/12.3.0/local_installers/cuda_12.3.0_545.23.06_linux.run
 	sudo sh cuda_12.3.0_545.23.06_linux.run
+	sudo apt update
+	sudo apt-get install libboost-all-dev
 }
 
 install_conda() {
@@ -25,11 +27,11 @@ install_conda() {
 
 init_conda() {
 	__conda_setup="$(${CONDA_EXE:-"$HOME/miniconda3/bin/conda"} shell.bash hook)"
-    eval "$__conda_setup"
-    source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
-    conda activate dspeed_env
-export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+    	eval "$__conda_setup"
+    	source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
+    	conda activate dspeed_env
+	export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
+	export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 	export CFLAGS="-I$CONDA_PREFIX/include/"
        	export LDFLAGS="-L$CONDA_PREFIX/lib/"
@@ -41,7 +43,7 @@ build_env() {
 	conda activate dspeed_env
 	echo "Installing PyTorch"
 	pip install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url https://download.pytorch.org/whl/cu121
-	pip install nltk numpy regex six transformers sentencepiece pybind11 einops packaging ninja
+	pip install nltk 'numpy<2' regex six transformers sentencepiece pybind11 einops packaging ninja
 	conda install anaconda::libaio
 }
 
