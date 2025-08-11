@@ -2,11 +2,12 @@
 
 set -x
 echo "Starting MLP-Offload experiments:"
-conda init
-conda activate dspeed_env
-NVME_PATH="/temp-nvme-dir" 	# "/local/scratch"
-PFS_PATH="/mydata/local" 	# "/vast/users/$USER/scratch"
+# conda init
+# conda activate dspeed_env
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source $SCRIPT_DIR/polaris-env.sh
+NVME_PATH="/local/scratch"
+PFS_PATH="/grand/projects/VeloC/am6429/public/scratch" 	# "/vast/users/$USER/scratch"
 PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
 DIR=$PROJECT_ROOT_DIR/scripts/
 
@@ -273,7 +274,7 @@ set_model_size() {
 # # ################ Run for diff model sizes
 
 models=(40)
-sg_all=(10000000)
+sg_all=(100000000)
 PIPELINERW=1
 ONEATTIME=1
 BC=32

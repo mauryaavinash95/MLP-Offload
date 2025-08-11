@@ -44,6 +44,7 @@ build_env() {
 	pip install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url https://download.pytorch.org/whl/cu121
 	pip install nltk 'numpy<2' regex six transformers sentencepiece pybind11 einops packaging ninja pandas scikit-learn matplotlib tqdm
 	conda install anaconda::libaio
+	conda install conda-forge::boost
 }
 
 install_apex() {
@@ -58,9 +59,9 @@ install_apex() {
 	echo "Installing NVIDIA Apex... This takes ~10 minutes..."
 	git clone https://github.com/NVIDIA/apex
 	cd apex/
-	sed -i 's/^[[:space:]]*check_cuda_torch_binary_vs_bare_metal(CUDA_HOME)/#&/' setup.py # this command is required to avoid CUDA vs PyTorch version mismatch errors.
-	# git checkout 6309120bf4158e5528 # This commit didn't give NCCL faults.
 	git checkout $COMMIT_ID
+	# git checkout 6309120bf4158e5528 # This commit didn't give NCCL faults.
+	sed -i 's/^[[:space:]]*check_cuda_torch_binary_vs_bare_metal(CUDA_HOME)/#&/' setup.py # this command is required to avoid CUDA vs PyTorch version mismatch errors.
 	pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 }
 

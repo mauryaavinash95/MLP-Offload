@@ -10,7 +10,7 @@ NUM_HEADS=0
 SEQ_LENGTH=0
 NUM_KV_HEADS=0
 TRAIN_ITERS=0
-NNODES=$(wc -l < $COBALT_NODEFILE)
+NNODES=$(wc -l < $PBS_NODEFILE)
 TP=4
 MICRO_BATCH=1
 GLOBAL_BATCH=1
@@ -246,15 +246,15 @@ print_vals
 
 init_conda() {
 	__conda_setup="$(${CONDA_EXE:-"$HOME/miniconda3/bin/conda"} shell.bash hook)"
-    eval "$__conda_setup"
-    source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
-    conda activate dspeed_env
+  eval "$__conda_setup"
+  source ~/miniconda3/etc/profile.d/conda.sh  # Ensures `conda activate` works in non-login shell
+  conda activate /grand/projects/VeloC/am6429/public/dspeed_env
 	export PATH=/usr/local/cuda/bin:$CONDA_PREFIX/include/${PATH:+:${PATH}}
 	export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/$CONDA_PREFIX/lib/:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 	export CFLAGS="-I$CONDA_PREFIX/include/"
-       	export LDFLAGS="-L$CONDA_PREFIX/lib/"
+  export LDFLAGS="-L$CONDA_PREFIX/lib/"
 }
-init_conda
+# init_conda
 
 BASE_DATA_PATH=$PROJECT_ROOT_DIR/dataset
 DATASET="${BASE_DATA_PATH}/my-gpt2_text_document"
