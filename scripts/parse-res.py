@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import copy
 import os
+import json
 
 #### Initialization of constants and configurations ####
 LOCAL_NVME_ROOT = "tmp"
@@ -53,7 +54,6 @@ base_config = {"basepath":"./", "approach": DEFAULT_DEEPSPEED, "dp": 4, "tp": 1,
 # Define the columns of interest for extracting from the log files.
 df_columns = [
     'elapsed_time_per_iteration_ms', 
-    'iter_time',
     'TFLOPs', 
     'fwd', 
     'bwd', 
@@ -81,11 +81,7 @@ def parse_log(m, c):
     print(f"Reading {log_file}")       
     data = {k: [] for k in df_columns}
     with open(log_file, 'r') as file:
-        for line in file:            
-            match = re.findall(r'<TIMER:interval-time,(\d+\.\d+)>', line)
-            for x in match:
-                data['iter_time'].append(float(x))
-            
+        for line in file:        
             match = re.search(r'elapsed time per iteration \(ms\): (\d+\.\d+)', line)
             if match:
                 data['elapsed_time_per_iteration_ms'].append(float(match.group(1)))
@@ -118,13 +114,6 @@ def parse_log(m, c):
             if match:
                 data['step_microstep'].append(float(match.group(1)))
 
-    
-    if c['dp']*c['tp'] > 1: # This is used only because every rank is printing `interval-time`
-        k = c['dp']*c['tp']
-        num_entries = len(data['iter_time']) // k
-        iter_times = [sum(data['iter_time'][i*k:(i+1)*k]) / k for i in range(num_entries)]
-        data['iter_time'] = iter_times
-    # print(data)
     if len(data['step']) == 0:  # This means that we couldn't complete even one step due to OOM
         data = {k: None for k in df_columns}
     df = pd.DataFrame(data, columns=df_columns)

@@ -2,8 +2,6 @@
 
 set -x
 echo "Starting MLP-Offload experiments:"
-# conda init
-# conda activate dspeed_env
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source $SCRIPT_DIR/polaris-env.sh
 NVME_PATH="/local/scratch"
